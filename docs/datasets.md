@@ -94,7 +94,7 @@ Properties enforced by `goef.weights` and by `tests/test_weights.py`:
 | 2 | `01_01` | 1 | C(54,2) = 1 431 | 0.065835 |
 | 2 | `01_02` | 2 | 54·37 = 1 998 | 0.091921 |
 | 4 | `01_02` | 2 | 2 290 374 | 0.029653 |
-| 4 | `01_02_03_04` | 4 | 2 834 349 | see `sampling/weights` |
+| 4 | `01_02_03_04` | 4 | 2 733 264 | 0.035387 |
 
 `01_01` is a *repeated* centre: 2-shot evaluation with the same representative
 twice is numerically the 1-shot experiment of `center_01`, so its weight is

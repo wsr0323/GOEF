@@ -100,8 +100,8 @@ bottle,0.9968253968253968,0.9989838017340629,0.9888589539541247,0.96453152933161
 ...,Overall,...
 ```
 
-62 files per method (31 centre directories × 2 datasets) for each shot, i.e.
-`5 + 10 + 10 + 5 + 1 = 31` centres.
+62 result files per method (31 centre directories × 2 datasets), i.e.
+`5 + 10 + 10 + 5 + 1 = 31` centres, each evaluated at all five shots.
 
 ## Stage 6 — validation aggregation (Table I)
 

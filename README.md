@@ -6,6 +6,8 @@ Reference implementation of
 > Few-shot Image Anomaly Detection**
 > Siqi Wang, Shiru Wang, Rundong Xian, Guangpu Wang, Sha He, Chuanfu Xu, Jie Liu, Xinwang Liu
 
+中文说明见 [`README.zh-CN.md`](README.zh-CN.md)。
+
 Few-shot image anomaly detection (FS-IAD) is usually evaluated with a single
 manually or randomly picked normal reference image. That image is a **local**
 point of the normal image space, so the reported score can be several AUROC
@@ -118,8 +120,9 @@ export GOEF_DINOV3=/data/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
 | 7 | `07_aggregate_reevaluation.sh` | Table II |
 
 Stages 4 and 5 dominate the cost: stage 4 evaluates 12 288 reference images per
-method (5 × 27 categories), stage 5 evaluates 62 centre datasets per method and
-trains INP-Former, PromptAD, FoundAD and PatchCore from scratch.
+method (27 categories of MVTec-AD and VisA), stage 5 evaluates 62 centre
+datasets per method and trains INP-Former, PromptAD, FoundAD and PatchCore from
+scratch.
 
 A single setting can be reproduced on its own, e.g. 1-shot Table II:
 
