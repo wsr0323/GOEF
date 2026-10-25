@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+set -Eeuo pipefail
+
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DATA_ROOT="${DATA_ROOT:-${GOEF_WORKSPACE:+${GOEF_WORKSPACE}/centers}}"
+: "${DATA_ROOT:?set DATA_ROOT to the directory containing 1-shot .. 5-shot}"
+RESULTS_ROOT="${RESULTS_ROOT:-${PROJECT_DIR}/results}"
+PYTHON_BIN="${PYTHON_BIN:-python}"
+SHOTS="${SHOTS:-1 2 3 4 5}"
+DATASETS="${DATASETS:-mvtec visa}"
+SKIP_EXISTING="${SKIP_EXISTING:-1}"
+DRY_RUN="${DRY_RUN:-0}"
+RESOLUTION="${RESOLUTION:-672}"
+
+dataset_argument() {
+    case "$1" in
+        mvtec) printf '%s\n' 'MVTec' ;;
+        visa) printf '%s\n' 'VisA' ;;
+        *)
+            printf 'Unsupported dataset: %s (use mvtec and/or visa)\n' "$1" >&2
+            return 1
+            ;;
+    esac
+}
+
+run_evaluation() {
+    local shot="$1"
+    local combination_dir="$2"
+    local dataset_key="$3"
+    local dataset_name run_name run_dir output_csv
+    shift 3
+
+    dataset_name="$(dataset_argument "$dataset_key")"
+    run_name="$(basename "$combination_dir")_${dataset_key}"
+    run_dir="${RESULTS_ROOT}/${shot}-shot/runs/${run_name}"
+    output_csv="${RESULTS_ROOT}/${shot}-shot/${run_name}.csv"
+
+    if [[ "$SKIP_EXISTING" == "1" && -s "$output_csv" ]]; then
+        printf '[skip] %s already exists\n' "$output_csv"
+        return
+    fi
+
+    local -a command=("$PYTHON_BIN" "${PROJECT_DIR}/run_anomalydino.py")
+    command+=("$@")
+    command+=(
+        --dataset "$dataset_name"
+        --data_root "${combination_dir}/${dataset_key}"
+        --shots "$shot"
+        --results_dir "$run_dir"
+        --result_csv "$output_csv"
+        --resolution "$RESOLUTION"
+        --use_all_references
+        --eval_clf
+        --eval_segm
+    )
+
+    printf '[run] %s-shot %s %s\n' "$shot" "$(basename "$combination_dir")" "$dataset_key"
+    if [[ "$DRY_RUN" == "1" ]]; then
+        printf '  '
+        printf '%q ' "${command[@]}"
+        printf '\n  CSV -> %s\n' "$output_csv"
+        return
+    fi
+
+    "${command[@]}"
+
+    if [[ ! -s "$output_csv" ]]; then
+        printf 'Evaluation finished but result CSV was not created: %s\n' "$output_csv" >&2
+        return 1
+    fi
+    printf '[done] %s\n' "$output_csv"
+}
+
+main() {
+    local shot dataset_key shot_dir combination_dir
+
+    if [[ ! "$RESOLUTION" =~ ^[1-9][0-9]*$ ]]; then
+        printf 'Invalid resolution: %s (expected a positive integer)\n' "$RESOLUTION" >&2
+        return 1
+    fi
+
+    cd "$PROJECT_DIR"
+    for shot in $SHOTS; do
+        if [[ ! "$shot" =~ ^[1-5]$ ]]; then
+            printf 'Invalid shot value: %s (expected 1 through 5)\n' "$shot" >&2
+            return 1
+        fi
+
+        shot_dir="${DATA_ROOT}/${shot}-shot"
+        if [[ ! -d "$shot_dir" ]]; then
+            printf 'Shot directory does not exist: %s\n' "$shot_dir" >&2
+            return 1
+        fi
+        mkdir -p "${RESULTS_ROOT}/${shot}-shot/runs"
+
+        while IFS= read -r -d '' combination_dir; do
+            for dataset_key in $DATASETS; do
+                if [[ ! -d "${combination_dir}/${dataset_key}" ]]; then
+                    printf 'Dataset directory does not exist: %s\n' "${combination_dir}/${dataset_key}" >&2
+                    return 1
+                fi
+                run_evaluation "$shot" "$combination_dir" "$dataset_key" "$@"
+            done
+        done < <(find "$shot_dir" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
+    done
+}
+
+main "$@"

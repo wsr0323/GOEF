@@ -1,0 +1,34 @@
+# GOEF empirical validation (Sec. III-D, Table I)
+#
+# `sampling_root` must contain one directory per strategy, named
+#   <method>/<Dataset>_k<k>_seed<seed>/summary.csv
+# e.g. random/MVTec_k5_seed0/summary.csv.  Environment variables are expanded,
+# so `$GOEF_WORKSPACE` and `$GOEF_DATA` can be exported once instead of editing
+# this file.
+#
+# Each detector entry is either a CSV path or {path, filter}.  `filter` keeps
+# only the rows whose `dataset` column matches one of the listed values; use it
+# when a single CSV contains both benchmarks (INP-Former).
+sampling_root: $GOEF_WORKSPACE/sampling
+k: 5
+seeds: [0, 1, 42, 1234, 3407]
+
+datasets:
+  MVTec:
+    detectors:
+      patchcore: $GOEF_WORKSPACE/results/patchcore/mvtec.csv
+      winclip: $GOEF_WORKSPACE/results/winclip/mvtec.csv
+      anomalydino: $GOEF_WORKSPACE/results/anomalydino/mvtec.csv
+      inpformer:
+        path: $GOEF_WORKSPACE/results/inpformer/results.csv
+        filter: [MVTec, MVTec-AD]
+      subspacead: $GOEF_WORKSPACE/results/subspacead/mvtec.csv
+  VisA:
+    detectors:
+      patchcore: $GOEF_WORKSPACE/results/patchcore/visa.csv
+      winclip: $GOEF_WORKSPACE/results/winclip/visa.csv
+      anomalydino: $GOEF_WORKSPACE/results/anomalydino/visa.csv
+      inpformer:
+        path: $GOEF_WORKSPACE/results/inpformer/results.csv
+        filter: [VisA]
+      subspacead: $GOEF_WORKSPACE/results/subspacead/visa.csv

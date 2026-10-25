@@ -1,0 +1,28 @@
+# scratch space of the pipeline
+work/
+third_party/
+data/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# artefacts that are large or machine specific
+*.log
+*.pth
+*.pt
+*.tar
+*.zip
+*.npy
+*.tiff
+*.tif
+sampling/
+centers/

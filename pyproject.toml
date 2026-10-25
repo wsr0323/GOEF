@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goef"
+version = "1.0.0"
+description = "Globality-Orientated Evaluation Framework for few-shot image anomaly detection"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+  {name = "Siqi Wang"},
+  {name = "Shiru Wang"},
+  {name = "Rundong Xian"},
+  {name = "Guangpu Wang"},
+]
+keywords = ["anomaly detection", "few-shot", "evaluation", "industrial inspection"]
+classifiers = [
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.21",
+  "scikit-learn>=1.0",
+  "pillow>=9.0",
+  "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+backbone = ["timm>=0.9", "torch>=2.0", "tqdm>=4.60"]
+excel = ["openpyxl>=3.1"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+goef-sample = "goef.cli.sample:main"
+goef-build-centers = "goef.cli.build_centers:main"
+goef-weights = "goef.cli.weights:main"
+goef-validate = "goef.cli.validate:main"
+goef-reevaluate = "goef.cli.reevaluate:main"
+
+[tool.setuptools.packages.find]
+include = ["goef*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

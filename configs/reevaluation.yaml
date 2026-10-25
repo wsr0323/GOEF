@@ -1,0 +1,20 @@
+# GOEF k-shot re-evaluation (Sec. IV, Table II)
+#
+# `sampling_root` holds the partition used to *build* the k-shot center
+# datasets, i.e. <sampling_root>/<Dataset>_k5_seed1234/summary.csv.  Every
+# method points at its project directory (or directly at a results/ directory
+# containing `1-shot/`, `2-shot/`, ... sub-directories).
+sampling_root: $GOEF_WORKSPACE/sampling
+k: 5
+shots: [1, 2, 3, 4, 5]
+datasets: [mvtec, visa]
+
+methods:
+  patchcore: $GOEF_WORKSPACE/third_party/patchcore-inspection
+  Accurate-WinCLIP: $GOEF_WORKSPACE/third_party/Accurate-WinCLIP-pytorch
+  PromptAD: $GOEF_WORKSPACE/third_party/PromptAD
+  AnomalyDINO: $GOEF_WORKSPACE/third_party/AnomalyDINO
+  FoundAD: $GOEF_WORKSPACE/third_party/FoundAD
+  INP-Former: $GOEF_WORKSPACE/third_party/INP-Former
+  UniVAD: $GOEF_WORKSPACE/third_party/UniVAD
+  SubspaceAD: $GOEF_WORKSPACE/third_party/SubspaceAD

@@ -1,0 +1,50 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper below."
+title: "GOEF: Globality-Orientated Evaluation Framework for Few-shot Image Anomaly Detection"
+abstract: >-
+  Reference implementation of the Globality-Orientated Evaluation Framework
+  (GOEF), which replaces the single-reference evaluation of few-shot image
+  anomaly detection with a globality-preserving estimate.
+authors:
+  - family-names: Wang
+    given-names: Siqi
+  - family-names: Wang
+    given-names: Shiru
+  - family-names: Xian
+    given-names: Rundong
+  - family-names: Wang
+    given-names: Guangpu
+  - family-names: He
+    given-names: Sha
+  - family-names: Xu
+    given-names: Chuanfu
+  - family-names: Liu
+    given-names: Jie
+  - family-names: Liu
+    given-names: Xinwang
+type: software
+license: MIT
+version: 1.0.0
+date-released: "2026-10-25"
+preferred-citation:
+  type: article
+  title: "Don't Miss Forest for A Tree: The Globality-Orientated Evaluation Framework for Few-shot Image Anomaly Detection"
+  authors:
+    - family-names: Wang
+      given-names: Siqi
+    - family-names: Wang
+      given-names: Shiru
+    - family-names: Xian
+      given-names: Rundong
+    - family-names: Wang
+      given-names: Guangpu
+    - family-names: He
+      given-names: Sha
+    - family-names: Xu
+      given-names: Chuanfu
+    - family-names: Liu
+      given-names: Jie
+    - family-names: Liu
+      given-names: Xinwang
+  journal: "IEEE Transactions on Multimedia"
+  year: 2026

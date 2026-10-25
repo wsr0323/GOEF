@@ -1,0 +1,13 @@
+# core framework
+numpy>=1.21
+scikit-learn>=1.0
+pillow>=9.0
+pyyaml>=6.0
+
+# representative selection with DINOv3 (CPU or GPU)
+# timm>=0.9
+# torch>=2.0
+# tqdm>=4.60
+
+# optional: xlsx rendering of the paper tables
+# openpyxl>=3.1
