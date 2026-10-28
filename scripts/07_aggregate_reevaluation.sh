@@ -6,20 +6,19 @@
 #   $OUTPUT_ROOT/reevaluation/metric_rank_frequency.csv
 source "$(dirname -- "$0")/env.sh"
 
-THIRD_PARTY=${THIRD_PARTY:-"${GOEF_WORKSPACE}/third_party"}
 OUT="${OUTPUT_ROOT}/reevaluation"
 mkdir -p "$OUT"
 
 args=()
 add() { [[ -d "$2" ]] && args+=(--method "$1=$2"); }
-add patchcore         "${THIRD_PARTY}/patchcore-inspection"
-add Accurate-WinCLIP  "${THIRD_PARTY}/Accurate-WinCLIP-pytorch"
-add PromptAD          "${THIRD_PARTY}/PromptAD"
-add AnomalyDINO       "${THIRD_PARTY}/AnomalyDINO"
-add FoundAD           "${THIRD_PARTY}/FoundAD"
-add INP-Former        "${THIRD_PARTY}/INP-Former"
-add UniVAD            "${THIRD_PARTY}/UniVAD"
-add SubspaceAD        "${THIRD_PARTY}/SubspaceAD"
+add patchcore         "${REEVALUATION_DIR}/patchcore-inspection"
+add Accurate-WinCLIP  "${REEVALUATION_DIR}/Accurate-WinCLIP-pytorch"
+add PromptAD          "${REEVALUATION_DIR}/PromptAD"
+add AnomalyDINO       "${REEVALUATION_DIR}/AnomalyDINO"
+add FoundAD           "${REEVALUATION_DIR}/FoundAD"
+add INP-Former        "${REEVALUATION_DIR}/INPFormer"
+add UniVAD            "${REEVALUATION_DIR}/UniVAD"
+add SubspaceAD        "${REEVALUATION_DIR}/SubspaceAD"
 
 if [[ ${#args[@]} -eq 0 ]]; then
   echo "ERROR: no method directory found under ${THIRD_PARTY}" >&2

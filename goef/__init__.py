@@ -16,7 +16,7 @@ and contains the reference implementation of every stage used in the paper:
 ``goef.reevaluate``  Weighted k-shot re-evaluation and the paper's rankings.
 
 The four image/pixel metrics shared by every evaluated method live in
-``evaluation/common/unified_evaluation.py``: that file is copied unchanged into
+``modifications/common/unified_evaluation.py``: that file is copied unchanged into
 each third-party project, so it deliberately has no dependency on this package.
 """
 

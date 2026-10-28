@@ -32,7 +32,7 @@ Framework for Few-shot Image Anomaly Detection》** 的完整项目代码，覆�
 | 1 | `01_select_representatives.sh` | `sampling/<方法>/<数据集>_k5_seed<种子>/summary.csv` |
 | 2 | `02_build_centers.sh` | `centers/<k>-shot/<中心>/<数据集>/`（共 62 个） |
 | 3 | `03_compute_weights.sh` | `sampling/weights/{mvtec,visa}_k<k>.csv` |
-| 4 | `04_run_one_shot_sweeps.sh` | 5 个方法“每张训练图当一次 1-shot”的结果 CSV |
+| 4 | `04_run_one_shot_sweeps.sh` | 5 个方法“每张训练图当一次 1-shot”的**全量**结果 CSV |
 | 5 | `05_run_center_shots.sh` | 8 个方法在每个中心数据集上的结果 CSV |
 | 6 | `06_aggregate_validation.sh` | 表 I |
 | 7 | `07_aggregate_reevaluation.sh` | 表 II |
@@ -43,7 +43,38 @@ Framework for Few-shot Image Anomaly Detection》** 的完整项目代码，覆�
 export GOEF_WORKSPACE=/data/goef-work      # 采样/中心/结果的存放目录
 export GOEF_DATA=/data/datasets            # MVTec-AD 与 VisA 根目录
 export GOEF_DINOV3=/data/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
+./scripts/install_methods.sh               # 克隆 8 个上游项目并覆盖 modifications/ 中的改动文件
 ./scripts/run_all.sh
+```
+
+### 表 I 的六种策略共用同一份“全量 1-shot”结果
+
+表 I 虽然比较六种策略，但对每个检测方法**只需要跑一遍**：阶段 4 会把这个方法
+在“每张正常训练图各当一次 1-shot 参考图”下的全部结果写成一张表（每个方法
+12 288 条）。六种策略都是在这同一张表里按不同方式取行、加权：
+
+| 策略 | 阶段 6 的取法 |
+|---|---|
+| SINGLE | 每个类别取一行固定参考图（该对比种子下 `k=1` 的随机选择） |
+| RE-RS / RE-CS | 取 random / coreset 选出的 `n = 5` 行，按 `1/n` 平均 |
+| GOEF-KC / GOEF-KD / GOEF-KM | 取 k-center / k-medoids / k-means 的 5 张代表图，按簇大小 `N_j / N` 加权 |
+
+`μ_g` 是该类别**全部**参考图结果的均值，近似误差始终取**绝对值**：
+
+```
+ε = | μ_g − μ_r |
+```
+
+因此策略不会因为高估或低估而“占便宜”。阶段 1 只写 `summary.csv`（记录读哪些行、
+权重多少），本身不运行任何检测方法。所以完整复现表一只需一遍阶段 4 加一次
+阶段 6；更换 `n`、随机种子或策略集合重新聚合时，不需要重跑方法。
+
+只想复现某一种设置时：
+
+```bash
+./scripts/05_run_center_shots.sh 1            # 只跑表 II 的 1-shot
+ONLY=patchcore ./scripts/05_run_center_shots.sh 1
+DETECTORS="patchcore" ./scripts/04_run_one_shot_sweeps.sh   # 表 I 只跑一个检测方法
 ```
 
 ## 代码结构
@@ -52,7 +83,7 @@ export GOEF_DINOV3=/data/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
 |---|---|
 | `goef/` | 核心实现：特征提取、5 种选择策略、中心数据集、权重（式 21–22）、加权聚合、表 I 验证、表 II 重评估 |
 | `goef/cli/` | 5 个命令行入口：`sample` / `build_centers` / `weights` / `validate` / `reevaluate` |
-| `evaluation/` | 13 个方法适配器：5 个逐参考图扫描 + 8 个逐中心评估，以及统一的 `unified_evaluation.py` |
+| `modifications/` | 8 个上游项目的全部改动文件（5 个逐参考图扫描 + 8 个逐中心评估），以及统一的 `unified_evaluation.py`；每个项目附运行命令 |
 | `scripts/` | 端到端流水线与上游项目安装脚本 |
 | `configs/` | 两个聚合阶段的 YAML 配置 |
 | `results/` | 重新生成的表 I、表 II 结果 |
@@ -113,7 +144,7 @@ python -m goef.cli.reevaluate \
   --output results/my_method
 ```
 
-请复用 `evaluation/common/unified_evaluation.py` 的指标实现，以保证与表 II 可比。
+请复用 `modifications/common/unified_evaluation.py` 的指标实现，以保证与表 II 可比。
 
 ## 相关文档
 
@@ -122,10 +153,10 @@ python -m goef.cli.reevaluate \
 * `docs/datasets.md` —— 数据集、中心数据集、权重语义（含 bottle 实例）
 * `docs/results.md` —— 表 I / 表 II 完整复现与数值差异说明
 * `docs/third_party.md` —— 8 个上游项目的地址、许可证、改动文件
-* `evaluation/README.md` —— 13 个适配器的用法
+* `modifications/README.md` —— 每个项目的改动清单与运行命令
 
 ## 许可证
 
 `goef/`、`scripts/`、`configs/`、`tests/` 及为本论文编写的适配器使用 MIT 协议；
-`evaluation/**/files/` 中源自上游项目的文件保留其原有许可证（Apache-2.0、MIT、
+`modifications/**/files/` 中源自上游项目的文件保留其原有许可证（Apache-2.0、MIT、
 Unlicense、CC BY-NC-SA 4.0 或无许可证），详见 `docs/third_party.md`。

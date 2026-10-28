@@ -15,7 +15,7 @@ implements it.  Symbol names follow the paper.
 | Eq. (7) | K-medoids objective | `goef.selection.fit_k_medoids` |
 
 `μ_g` is only computable when *every* training image can be used as a reference,
-which is what the per-reference sweeps of `evaluation/validation/` do.  For a
+which is what the per-reference sweeps of `modifications/<method>/validation/` do.  For a
 category with `N` training images and a test set of `T` images this costs `N`
 full evaluations, so `μ_g` is affordable for 1-shot only.
 
@@ -101,7 +101,7 @@ The third row is the reuse mechanism: three 4-tuples `(1,1,1,2)`, `(1,1,2,2)`,
 | Pixel AUROC | `roc_auc_score` over all pixels of a category |
 | Pixel AUPRO | `unified_evaluation.compute_aupro`: 8-connected ground-truth regions, 200 thresholds uniform in background FPR, integrated on `[0, 0.30]`, divided by `0.30` |
 
-`evaluation/common/unified_evaluation.py` is copied unchanged into every project
+`modifications/common/unified_evaluation.py` is copied unchanged into every project
 so that no adapter can silently change the protocol.  The per-method AUPRO
 implementations of the upstream projects are **not** used for the paper's
 numbers: every adapter reports the four metrics above.

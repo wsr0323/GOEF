@@ -1,0 +1,10 @@
+# @package app
+
+model_name: dinov3
+ckpt_step: ''
+ckpt_path: null
+params_path: null
+output_folder: null
+
+logging:
+  write_tag: AD               

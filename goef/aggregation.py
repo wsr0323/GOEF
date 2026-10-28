@@ -60,7 +60,7 @@ def read_per_reference_metrics(path: Path) -> dict[tuple[str, str], dict[str, fl
 
     Expected columns (order does not matter): ``object``, ``ref_sample`` and the
     four metrics.  This is the schema written by every evaluation adapter under
-    ``evaluation/``.
+    ``modifications/``.
     """
     table: dict[tuple[str, str], dict[str, float]] = {}
     with path.open(encoding="utf-8-sig", newline="") as handle:

@@ -10,14 +10,13 @@ Reference implementation of
 
 Few-shot image anomaly detection (FS-IAD) is usually evaluated with a single
 manually or randomly picked normal reference image. That image is a **local**
-point of the normal image space, so the reported score can be several AUROC
-points away from the **global** performance, and different papers use different
+point of the normal image space, so the reported score can be several performance metric away from the **global** performance, and different papers use different
 reference images, which makes their numbers incomparable.
 
 GOEF replaces the local reference with a *globality-preserving* estimate:
 
 1. embed every normal training image with a frozen encoder (DINOv3);
-2. cluster them into `n` compact clusters (K-means / K-medoids);
+2. cluster them into `n` compact clusters (eg:K-means / K-medoids);
 3. use one representative image per cluster as a 1-shot reference;
 4. weight each representative by the size of its cluster — Eq. (2);
 5. for `k > 1`, weight every k-shot centre combination by the number of
@@ -36,7 +35,7 @@ and the eight-method re-evaluation of Sec. IV.
 |---|---|
 | `goef/` | the framework: embeddings, selectors, centres, weights, aggregation, validation |
 | `goef/cli/` | five command-line entry points (`sample`, `build_centers`, `weights`, `validate`, `reevaluate`) |
-| `evaluation/` | the per-method adapters for the 5 validation sweeps and the 8 re-evaluated methods |
+| `modifications/` | every file that differs from the eight upstream projects, with per-project run commands |
 | `scripts/` | the end-to-end pipeline (`run_all.sh` + seven numbered stages) |
 | `configs/` | YAML configurations of the two aggregation stages |
 | `results/` | the regenerated Table I and Table II artefacts |
@@ -56,7 +55,7 @@ and the eight-method re-evaluation of Sec. IV.
    (Sec. III-D, Table I)            (k-shot centre datasets, Eq. 21–22)
    μ_g vs μ_r, ε and rank                     │
               │                              ▼
-              │                     evaluation/ (8 FS-IAD methods)
+              │                modifications/ + upstream projects
               │                              │
               │                     goef.reevaluate (Sec. IV, Table II)
               ▼                              ▼
@@ -73,9 +72,15 @@ python -m pip install -e .            # core framework (numpy, scikit-learn, pil
 The method adapters need the upstream projects and their own environments:
 
 ```bash
-export SUBSPACEAD_SRC=/path/to/SubspaceAD   # SubspaceAD has no public repository
-./scripts/install_methods.sh                # clones the other seven into third_party/
+./scripts/install_methods.sh                 # both experiments, 8 projects
+./scripts/install_methods.sh reevaluation    # only Sec. IV
 ```
+
+This clones each upstream into `third_party/{validation,reevaluation}/<project>`
+and copies the changed files from `modifications/` over it.  PatchCore, WinCLIP,
+AnomalyDINO and SubspaceAD keep two checkouts because the two experiments modify
+the same files differently.  See [`modifications/README.md`](modifications/README.md)
+for the file list and the run commands of every project.
 
 Optional extras used by the paper's experiments:
 
@@ -124,11 +129,42 @@ method (27 categories of MVTec-AD and VisA), stage 5 evaluates 62 centre
 datasets per method and trains INP-Former, PromptAD, FoundAD and PatchCore from
 scratch.
 
-A single setting can be reproduced on its own, e.g. 1-shot Table II:
+### What Table I actually runs
+
+Table I compares six strategies, but it needs **one method run set only**.  For
+a given detector, stage 4 produces the *complete* 1-shot table: one row for
+every normal training image used as the single reference, i.e. the 12 288
+evaluation results per method.  All six strategies are then obtained by reading
+different rows of that same table:
+
+| Strategy | What stage 6 reads |
+|---|---|
+| SINGLE | one fixed row per category (the `k=1` random pick of the comparison seed) |
+| RE-RS / RE-CS | the `n = 5` rows selected by random / coreset sampling, averaged with weight `1/n` |
+| GOEF-KC / GOEF-KD / GOEF-KM | the `n = 5` representatives of k-center / k-medoids / k-means, averaged with the cluster-size weights `N_j / N` |
+
+`μ_g` is the row-wise mean over **all** images of the category, and the
+approximation error is always the **absolute** difference
+
+```
+ε = | μ_g − μ_r |
+```
+
+so a strategy cannot be rewarded for over- or under-estimating.  Stage 1 only
+writes `summary.csv` (which rows to read and with which weight); it never runs a
+detector.  Consequently, a full Table I reproduction costs exactly one pass of
+stage 4 plus the cheap stage 6, and re-running an aggregation with a different
+`n`, seed or strategy set does not require new method runs.
+
+### Reproducing a single setting
 
 ```bash
+# Table II, 1-shot only
 ./scripts/05_run_center_shots.sh 1
 ONLY=patchcore ./scripts/05_run_center_shots.sh 1
+
+# Table I for one detector only (the other five are optional for the mean)
+DETECTORS="patchcore" ./scripts/04_run_one_shot_sweeps.sh
 ```
 
 ## Results
@@ -179,7 +215,7 @@ a dataset directory whose `train/good` contains the k reference images:
 
 # 2. run your method on every centre and write one CSV per centre with
 #    Category, Image AUROC, Image AUPR, Pixel AUROC, Pixel AUPRO
-#    (see evaluation/README.md for the 11-column unified schema)
+#    (see modifications/README.md for the 11-column unified schema)
 
 # 3. aggregate with the GOEF weights
 python -m goef.cli.reevaluate \
@@ -188,7 +224,7 @@ python -m goef.cli.reevaluate \
   --output results/my_method
 ```
 
-The metric protocol is `evaluation/common/unified_evaluation.py`; copy it into
+The metric protocol is `modifications/common/unified_evaluation.py`; copy it into
 your project so that the four numbers remain comparable with Table II.
 
 ## Documentation
@@ -197,7 +233,7 @@ your project so that the four numbers remain comparable with Table II.
 * [`docs/pipeline.md`](docs/pipeline.md) — stage-by-stage data flow and file schemas
 * [`docs/datasets.md`](docs/datasets.md) — benchmark layout, centre datasets, weight semantics
 * [`docs/results.md`](docs/results.md) — Table I / Table II reproduced, plus the known numerical drift
-* [`evaluation/README.md`](evaluation/README.md) — the thirteen method adapters
+* [`modifications/README.md`](modifications/README.md) — every changed file and the run commands per project
 * [`docs/third_party.md`](docs/third_party.md) — upstream revisions and licences
 
 ## Citation
@@ -216,6 +252,6 @@ your project so that the four numbers remain comparable with Table II.
 ## Licence
 
 MIT for the code in `goef/`, `scripts/`, `configs/`, `tests/` and the adapters
-written for this paper. The files under `evaluation/**/files/` that are derived
+written for this paper. The files under `modifications/**/files/` that are derived
 from upstream projects keep their original licences; see
 [`docs/third_party.md`](docs/third_party.md).

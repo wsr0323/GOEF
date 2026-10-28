@@ -1,0 +1,18 @@
+torch
+torchvision
+opencv-python
+matplotlib
+Pillow
+numpy==1.26 # numpy 2.0 not compatible at the moment
+scipy
+scikit-learn
+faiss-gpu # or faiss-cpu
+tqdm
+tifffile
+argparse
+PyYAML
+pandas
+
+#python run_anomalydino.py --dataset MVTec --shots 1 --num_seeds 1 --preprocess informed --data_root D:/mvtec_anomaly_detection
+#python run_mvtec_train_1shot_refs.py --data_root /home/wsr/mvtec_anomaly_detection/ --object capsule screw --device cuda:0 --faiss_on_cpu --eval_segm
+#python run_visa_train_1shot_refs.py --data_root $GOEF_DATA/VisA_pytorch/1cls

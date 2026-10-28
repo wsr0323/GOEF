@@ -1,97 +1,84 @@
 #!/usr/bin/env bash
-# Clone the eight upstream FS-IAD projects and overlay the GOEF adapters.
+# Clone the eight upstream FS-IAD projects and overlay the modified files in
+# modifications/.  Upstream sources are never edited in place: the overlay is a
+# copy of the files listed in modifications/<method>/README.md.
 #
-#   ./scripts/install_methods.sh            # clone missing repos, copy adapters
-#   SUBSPACEAD_SRC=/path/to/SubspaceAD ./scripts/install_methods.sh
+#   ./scripts/install_methods.sh                 # both experiments
+#   ./scripts/install_methods.sh reevaluation    # only Sec. IV
+#   ./scripts/install_methods.sh validation      # only Sec. III-D
+#   METHOD=patchcore ./scripts/install_methods.sh reevaluation   # one project
 #
-# Optional per-project pins (recommended for exact reproduction):
-#   PIN_PATCHCORE=<commit> PIN_WINCLIP=<commit> ... ./scripts/install_methods.sh
+# Destinations (override with VALIDATION_DIR / REEVALUATION_DIR):
+#   <workspace>/third_party/validation/<project>     Sec. III-D per-reference sweeps
+#   <workspace>/third_party/reevaluation/<project>   Sec. IV   per-centre evaluations
 #
-# Upstream licences differ (Apache-2.0, MIT, Unlicense, CC BY-NC-SA 4.0); see
-# third_party/README.md before redistributing.
+# PatchCore, WinCLIP, AnomalyDINO and SubspaceAD carry different changes in the
+# two experiments (--train_image, specific_image_paths, ref_sample_names,
+# --k_shot_ref), so they are installed into separate checkouts.
+#
+# Optional commit pins:
+#   PIN_PATCHCORE=<sha> PIN_WINCLIP=<sha> ... ./scripts/install_methods.sh
 set -euo pipefail
 
-REPO_ROOT=$(cd -- "$(dirname -- "$0")/.." && pwd)
-THIRD_PARTY=${THIRD_PARTY:-"${REPO_ROOT}/third_party"}
-mkdir -p "$THIRD_PARTY"
+source "$(dirname -- "$0")/env.sh"
 
-clone() {  # clone <name> <url> <pin-var>
-  local name=$1 url=$2 pin=${3:-}
-  local dest="${THIRD_PARTY}/${name}"
+WANT=${1:-all}
+PIN_PATCHCORE=${PIN_PATCHCORE:-}
+PIN_WINCLIP=${PIN_WINCLIP:-}
+PIN_ANOMALYDINO=${PIN_ANOMALYDINO:-}
+PIN_INPFORMER=${PIN_INPFORMER:-}
+PIN_SUBSPACEAD=${PIN_SUBSPACEAD:-}
+PIN_PROMPTAD=${PIN_PROMPTAD:-}
+PIN_FOUNDAD=${PIN_FOUNDAD:-}
+PIN_UNIVAD=${PIN_UNIVAD:-}
+
+install_one() {  # install_one <key> <dir> <url> <experiment> <pin>
+  local key=$1 name=$2 url=$3 exp=$4 pin=${5:-}
+  local src="${REPO_ROOT}/modifications/${key}/${exp}/files"
+  local dest="${THIRD_PARTY}/${exp}/${name}"
+
+  [[ -d "$src" ]] || return 0
+  # METHOD accepts either the modifications/ key (patchcore) or the directory
+  # name (patchcore-inspection).
+  [[ -z "${METHOD:-}" || "${key}" == "${METHOD}" ]] || return 0
+
   if [[ -d "$dest/.git" ]]; then
-    echo "== ${name}: already cloned"
+    echo "== ${name} (${exp}): already cloned"
   elif [[ -d "$dest" ]]; then
-    echo "== ${name}: using existing directory ${dest}"
+    echo "== ${name} (${exp}): using existing directory ${dest}"
   else
-    echo "== ${name}: cloning ${url}"
+    echo "== ${name} (${exp}): cloning ${url}"
     git clone --depth 1 "$url" "$dest"
   fi
   if [[ -n "$pin" ]]; then
     git -C "$dest" fetch --depth 1 origin "$pin" 2>/dev/null || true
     git -C "$dest" checkout --detach "$pin"
   fi
+
+  cp -r "${src}/." "${dest}/"
+  cp "${REPO_ROOT}/modifications/common/unified_evaluation.py" "${dest}/unified_evaluation.py"
+  echo "   overlaid $(find "$src" -type f | wc -l) file(s) from modifications/${key}/${exp}/files"
 }
 
-overlay() {  # overlay <adapter-dir> <target-dir>
-  local src=$1 dst=$2
-  local files="${src}/files"
-  [[ -d "$files" ]] || { echo "ERROR: missing adapter files under $files" >&2; exit 1; }
-  mkdir -p "$dst"
-  cp -r "$files/." "$dst/"
-  echo "   copied $(find "$files" -type f | wc -l) file(s) -> $dst"
+install_all() {  # install_all <experiment>
+  local exp=$1
+  install_one patchcore    patchcore-inspection     https://github.com/amazon-science/patchcore-inspection.git "$exp" "$PIN_PATCHCORE"
+  install_one winclip      Accurate-WinCLIP-pytorch https://github.com/zqhang/Accurate-WinCLIP-pytorch.git      "$exp" "$PIN_WINCLIP"
+  install_one anomalydino  AnomalyDINO              https://github.com/dammsi/AnomalyDINO.git                  "$exp" "$PIN_ANOMALYDINO"
+  install_one inpformer    INPFormer                https://github.com/luow23/INPFormer.git                    "$exp" "$PIN_INPFORMER"
+  install_one subspacead   SubspaceAD               https://github.com/CLendering/SubspaceAD.git               "$exp" "$PIN_SUBSPACEAD"
+  install_one promptad     PromptAD                 https://github.com/FuNz-0/PromptAD.git                    "$exp" "$PIN_PROMPTAD"
+  install_one foundad      FoundAD                  https://github.com/ymxlzgy/FoundAD.git                    "$exp" "$PIN_FOUNDAD"
+  install_one univad       UniVAD                   https://github.com/FantasticGNU/UniVAD.git                "$exp" "$PIN_UNIVAD"
 }
 
-overlay_metrics() {  # the shared metric module lands at the project root
-  local dst=$1
-  cp "${REPO_ROOT}/evaluation/common/unified_evaluation.py" "${dst}/unified_evaluation.py"
-  echo "   copied unified_evaluation.py -> $dst"
-}
-
-# --- Sec. III-D per-reference sweeps + Sec. IV per-center evaluations --------
-clone patchcore-inspection https://github.com/amazon-science/patchcore-inspection.git "${PIN_PATCHCORE:-}"
-overlay "${REPO_ROOT}/evaluation/validation/patchcore"  "${THIRD_PARTY}/patchcore-inspection"
-overlay "${REPO_ROOT}/evaluation/reevaluation/patchcore" "${THIRD_PARTY}/patchcore-inspection"
-overlay_metrics "${THIRD_PARTY}/patchcore-inspection"
-
-clone Accurate-WinCLIP-pytorch https://github.com/zqhang/Accurate-WinCLIP-pytorch.git "${PIN_WINCLIP:-}"
-overlay "${REPO_ROOT}/evaluation/validation/winclip"   "${THIRD_PARTY}/Accurate-WinCLIP-pytorch"
-overlay "${REPO_ROOT}/evaluation/reevaluation/winclip" "${THIRD_PARTY}/Accurate-WinCLIP-pytorch"
-overlay_metrics "${THIRD_PARTY}/Accurate-WinCLIP-pytorch"
-
-clone INP-Former https://github.com/luow23/INP-Former.git "${PIN_INPFORMER:-}"
-overlay "${REPO_ROOT}/evaluation/validation/inpformer"   "${THIRD_PARTY}/INP-Former"
-overlay "${REPO_ROOT}/evaluation/reevaluation/inpformer" "${THIRD_PARTY}/INP-Former"
-overlay_metrics "${THIRD_PARTY}/INP-Former"
-
-clone AnomalyDINO https://github.com/dammsi/AnomalyDINO.git "${PIN_ANOMALYDINO:-}"
-overlay "${REPO_ROOT}/evaluation/validation/anomalydino"   "${THIRD_PARTY}/AnomalyDINO"
-overlay "${REPO_ROOT}/evaluation/reevaluation/anomalydino" "${THIRD_PARTY}/AnomalyDINO"
-overlay_metrics "${THIRD_PARTY}/AnomalyDINO"
-
-clone PromptAD https://github.com/FuNz-0/PromptAD.git "${PIN_PROMPTAD:-}"
-overlay "${REPO_ROOT}/evaluation/reevaluation/promptad" "${THIRD_PARTY}/PromptAD"
-overlay_metrics "${THIRD_PARTY}/PromptAD"
-
-clone FoundAD https://github.com/ymxlzgy/FoundAD.git "${PIN_FOUNDAD:-}"
-overlay "${REPO_ROOT}/evaluation/reevaluation/foundad" "${THIRD_PARTY}/FoundAD"
-overlay_metrics "${THIRD_PARTY}/FoundAD"
-
-clone UniVAD https://github.com/FantasticGNU/UniVAD.git "${PIN_UNIVAD:-}"
-overlay "${REPO_ROOT}/evaluation/reevaluation/univad" "${THIRD_PARTY}/UniVAD"
-overlay_metrics "${THIRD_PARTY}/UniVAD"
-
-# SubspaceAD has no public repository at the time of writing.
-if [[ -n "${SUBSPACEAD_SRC:-}" ]]; then
-  [[ -d "$SUBSPACEAD_SRC" ]] || { echo "ERROR: SUBSPACEAD_SRC is not a directory" >&2; exit 1; }
-  overlay "${REPO_ROOT}/evaluation/validation/subspacead"   "${SUBSPACEAD_SRC}"
-  overlay "${REPO_ROOT}/evaluation/reevaluation/subspacead" "${SUBSPACEAD_SRC}"
-  overlay_metrics "${SUBSPACEAD_SRC}"
-  echo "== SubspaceAD: adapters installed into ${SUBSPACEAD_SRC}"
-else
-  echo "== SubspaceAD: skipped (set SUBSPACEAD_SRC=/path/to/SubspaceAD to install)"
-fi
+case "$WANT" in
+  all)             install_all validation; install_all reevaluation ;;
+  validation)      install_all validation ;;
+  reevaluation)    install_all reevaluation ;;
+  *) echo "ERROR: expected 'all', 'validation' or 'reevaluation', got '$WANT'" >&2; exit 2 ;;
+esac
 
 echo
-echo "Adapter files are copied into the upstream checkouts; upstream sources are"
-echo "never modified in place by this repository (the overlays are copies of the"
-echo "modified files used for the paper)."
+echo "Installed under ${THIRD_PARTY}/{validation,reevaluation}."
+echo "Each checkout already contains unified_evaluation.py from modifications/common/."

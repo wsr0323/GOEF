@@ -24,7 +24,7 @@ SOFTWARE.
 ---------------------------------------------------------------------------
 Third-party code
 ---------------------------------------------------------------------------
-Files under evaluation/*/files/ that are derived from the evaluated FS-IAD
+Files under modifications/**/files/ that are derived from the evaluated FS-IAD
 projects remain under their original licences (Apache-2.0, MIT, Unlicense,
 CC BY-NC-SA 4.0 or "all rights reserved" when no licence was published).
 See docs/third_party.md.  They are distributed here solely to make the

@@ -10,10 +10,13 @@
 # script can be interrupted and restarted.
 source "$(dirname -- "$0")/env.sh"
 
-THIRD_PARTY=${THIRD_PARTY:-"${GOEF_WORKSPACE}/third_party"}
 GPU=${GPU:-0}
 SKIP_EXISTING=${SKIP_EXISTING:-1}
+# Subset of detectors, e.g. DETECTORS="patchcore winclip"
+DETECTORS=${DETECTORS:-"patchcore winclip inpformer subspacead anomalydino"}
 mkdir -p "$RESULT_ROOT"/{patchcore,winclip,inpformer,subspacead,anomalydino}
+
+want() { [[ " ${DETECTORS} " == *" $1 "* ]]; }
 
 run() {  # run <logfile> <command...>
   local log=$1; shift
@@ -22,8 +25,8 @@ run() {  # run <logfile> <command...>
 }
 
 # --- PatchCore ---------------------------------------------------------------
-if [[ -d "${THIRD_PARTY}/patchcore-inspection" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/patchcore/mvtec.csv" ]]; }; then
-  cd "${THIRD_PARTY}/patchcore-inspection"
+if want patchcore && [[ -d "${VALIDATION_DIR}/patchcore-inspection" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/patchcore/mvtec.csv" ]]; }; then
+  cd "${VALIDATION_DIR}/patchcore-inspection"
   for dataset in mvtec visa; do
     root=$([[ $dataset == mvtec ]] && echo "$MVTEC_ROOT" || echo "$VISA_ROOT")
     run "${RESULT_ROOT}/patchcore/${dataset}.log" \
@@ -35,8 +38,8 @@ if [[ -d "${THIRD_PARTY}/patchcore-inspection" ]] && ! { [[ "$SKIP_EXISTING" == 
 fi
 
 # --- WinCLIP -----------------------------------------------------------------
-if [[ -d "${THIRD_PARTY}/Accurate-WinCLIP-pytorch" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/winclip/mvtec.csv" ]]; }; then
-  cd "${THIRD_PARTY}/Accurate-WinCLIP-pytorch"
+if want winclip && [[ -d "${VALIDATION_DIR}/Accurate-WinCLIP-pytorch" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/winclip/mvtec.csv" ]]; }; then
+  cd "${VALIDATION_DIR}/Accurate-WinCLIP-pytorch"
   CUDA_VISIBLE_DEVICES="$GPU" run "${RESULT_ROOT}/winclip/mvtec.log" \
     "${GOEF_PYTHON}" run_one_category.py --datasets mvtec \
       --mvtec_root "$MVTEC_ROOT" --output_csv "${RESULT_ROOT}/winclip/mvtec.csv"
@@ -46,8 +49,8 @@ if [[ -d "${THIRD_PARTY}/Accurate-WinCLIP-pytorch" ]] && ! { [[ "$SKIP_EXISTING"
 fi
 
 # --- INP-Former (trains one model per reference image) -----------------------
-if [[ -d "${THIRD_PARTY}/INP-Former" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/inpformer/results.csv" ]]; }; then
-  cd "${THIRD_PARTY}/INP-Former"
+if want inpformer && [[ -d "${VALIDATION_DIR}/INPFormer" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/inpformer/results.csv" ]]; }; then
+  cd "${VALIDATION_DIR}/INPFormer"
   run "${RESULT_ROOT}/inpformer/results.log" \
     "${GOEF_PYTHON}" INP_Former_One_Image_Sweep.py \
       --datasets mvtec visa --device "cuda:${GPU}" \
@@ -56,8 +59,8 @@ if [[ -d "${THIRD_PARTY}/INP-Former" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "$
 fi
 
 # --- SubspaceAD --------------------------------------------------------------
-if [[ -d "${THIRD_PARTY}/SubspaceAD" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${THIRD_PARTY}/SubspaceAD/few_shot_results_each_train_1shot/mvtec_dinov2G/all_runs_table.csv" ]]; }; then
-  cd "${THIRD_PARTY}/SubspaceAD"
+if want subspacead && [[ -d "${VALIDATION_DIR}/SubspaceAD" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${VALIDATION_DIR}/SubspaceAD/few_shot_results_each_train_1shot/mvtec_dinov2G/all_runs_table.csv" ]]; }; then
+  cd "${VALIDATION_DIR}/SubspaceAD"
   MVTEC_PATH="${MVTEC_ROOT}/" VISA_PATH="${VISA_ROOT}/" \
     bash run_mvtec_each_train_1shot.sh
   MVTEC_PATH="${MVTEC_ROOT}/" VISA_PATH="${VISA_ROOT}/" \
@@ -69,8 +72,8 @@ if [[ -d "${THIRD_PARTY}/SubspaceAD" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "$
 fi
 
 # --- AnomalyDINO -------------------------------------------------------------
-if [[ -d "${THIRD_PARTY}/AnomalyDINO" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/anomalydino/summary.csv" ]]; }; then
-  cd "${THIRD_PARTY}/AnomalyDINO"
+if want anomalydino && [[ -d "${VALIDATION_DIR}/AnomalyDINO" ]] && ! { [[ "$SKIP_EXISTING" == 1 && -s "${RESULT_ROOT}/anomalydino/summary.csv" ]]; }; then
+  cd "${VALIDATION_DIR}/AnomalyDINO"
   CUDA_VISIBLE_DEVICES="$GPU" run "${RESULT_ROOT}/anomalydino/mvtec.log" \
     "${GOEF_PYTHON}" run_mvtec_train_1shot_refs.py --data_root "$MVTEC_ROOT" \
       --output_root "${RESULT_ROOT}/anomalydino/mvtec"
