@@ -20,7 +20,7 @@ The four image/pixel metrics shared by every evaluated method live in
 each third-party project, so it deliberately has no dependency on this package.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     "aggregation",
