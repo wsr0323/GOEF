@@ -1,0 +1,9 @@
+Method,Average Performance Metric,Average Rank Number,Tables,Shots
+SubspaceAD,95.725175,2.291667,6,"1,2,4"
+UniVAD,95.894096,2.416667,6,"1,2,4"
+AnomalyDINO,95.087552,3.333333,6,"1,2,4"
+INP-Former,95.495924,3.416667,6,"1,2,4"
+FoundAD,95.172985,3.541667,6,"1,2,4"
+PromptAD,91.823594,6.000000,6,"1,2,4"
+WinCLIP,89.270958,7.041667,6,"1,2,4"
+PatchCore,85.804657,7.958333,6,"1,2,4"

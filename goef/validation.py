@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import csv
 from collections import defaultdict
+from decimal import Decimal
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
@@ -172,15 +173,18 @@ def validate_dataset(
                     # pipeline does and keeps saturated metrics (1.0) tied.
                     estimate_value = estimate[metric]
                     actual_value = actual[category][metric]
+                    # The paper's tables store metrics with six decimals and take
+                    # the difference in exact decimal arithmetic; doing the same
+                    # here keeps the ties that the rank metric depends on.
                     if legacy_single_precision and strategy == "SINGLE":
                         # The archived pipeline copied SINGLE from the raw metric
-                        # CSV while every other strategy was stored with six
-                        # decimals.  Reproducing that asymmetry reproduces the
-                        # published rank of SINGLE exactly; it is off by default
-                        # because it slightly disadvantages the baseline.
-                        error = abs(estimate_value - round(actual_value, 6))
+                        # CSV (full precision) while every other strategy was
+                        # stored with six decimals.  Reproducing that asymmetry
+                        # reproduces the published SINGLE rank exactly; it is off
+                        # by default because it slightly disadvantages SINGLE.
+                        error = abs(Decimal(repr(float(estimate_value))) - Decimal(f"{actual_value:.6f}"))
                     else:
-                        error = abs(round(estimate_value, 6) - round(actual_value, 6))
+                        error = abs(Decimal(f"{estimate_value:.6f}") - Decimal(f"{actual_value:.6f}"))
                     rows.append(
                         {
                             "dataset": dataset,
@@ -191,7 +195,8 @@ def validate_dataset(
                             "metric": metric,
                             "estimate": estimate_value,
                             "actual": actual_value,
-                            "abs_error": error,
+                            "abs_error": float(error),
+                            "_error_key": error,
                         }
                     )
     return rows
@@ -269,11 +274,11 @@ def add_ranks(rows: list[dict[str, object]]) -> None:
         key = (row["dataset"], row["detector"], row["seed"], row["category"], row["metric"])
         groups[key].append(row)
     for group in groups.values():
-        group.sort(key=lambda row: (float(row["abs_error"]), row["strategy"]))
+        group.sort(key=lambda row: (row["_error_key"], row["strategy"]))
         previous_error = None
         previous_rank = 0
         for position, row in enumerate(group, start=1):
-            error = float(row["abs_error"])
+            error = row["_error_key"]
             if previous_error is not None and error == previous_error:
                 row["rank"] = previous_rank
             else:

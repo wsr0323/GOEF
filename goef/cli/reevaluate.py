@@ -10,7 +10,9 @@ from ..config import load_config
 from ..reevaluate import (
     DATASETS,
     aggregate_all,
+    category_rows,
     final_rows,
+    overall_ranking,
     overall_rows,
     rank_frequencies,
     rankings,
@@ -67,6 +69,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--allow_partial", action="store_true", help="keep shots with missing categories")
+    parser.add_argument(
+        "--figure_shots",
+        nargs="*",
+        type=int,
+        default=[1, 2, 4],
+        help="shots averaged by the Fig. 5 summary (default: the three reported settings)",
+    )
     return parser
 
 
@@ -127,6 +136,16 @@ def main(argv: list[str] | None = None) -> int:
         output / "method_metric_rankings.csv",
         ["Shot", "Metric", "Scope", "Rank", "Method", "Score"],
         rankings(results),
+    )
+    write_csv(
+        output / "category_weighted_results.csv",
+        ["Shot", "Dataset", "Method", "Category", *metrics],
+        category_rows(results),
+    )
+    write_csv(
+        output / "figure5_ranking.csv",
+        ["Method", "Average Performance Metric", "Average Rank Number", "Tables", "Shots"],
+        overall_ranking(results, tuple(args.figure_shots)),
     )
     frequency = rank_frequencies(results)
     rank_columns = [key for key in (frequency[0] if frequency else {}) if key.startswith("Rank ")]

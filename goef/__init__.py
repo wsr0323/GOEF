@@ -13,14 +13,15 @@ and contains the reference implementation of every stage used in the paper:
 ``goef.weights``     The globality weights of Eq. (21)-(22) for arbitrary k.
 ``goef.aggregation`` Globality-preserving metric aggregation (Algo. 2).
 ``goef.validation``  Approximation error eps, ranks r, and Table I.
-``goef.reevaluate``  Weighted k-shot re-evaluation and the paper's rankings.
+``goef.reevaluate``  Weighted k-shot re-evaluation, the paper's rankings and Fig. 5.
+``goef.collect``     Collection of the raw result tables shipped under ``results/``.
 
 The four image/pixel metrics shared by every evaluated method live in
 ``modifications/common/unified_evaluation.py``: that file is copied unchanged into
 each third-party project, so it deliberately has no dependency on this package.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = [
     "aggregation",

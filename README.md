@@ -34,11 +34,11 @@ and the eight-method re-evaluation of Sec. IV.
 | Path | Contents |
 |---|---|
 | `goef/` | the framework: embeddings, selectors, centres, weights, aggregation, validation |
-| `goef/cli/` | five command-line entry points (`sample`, `build_centers`, `weights`, `validate`, `reevaluate`) |
+| `goef/cli/` | six command-line entry points (`sample`, `build_centers`, `weights`, `validate`, `reevaluate`, `collect`) |
 | `modifications/` | every file that differs from the eight upstream projects, with per-project run commands |
 | `scripts/` | the end-to-end pipeline (`run_all.sh` + seven numbered stages) |
 | `configs/` | YAML configurations of the two aggregation stages |
-| `results/` | the regenerated Table I and Table II artefacts |
+| `results/` | Table I, Table II, Fig. 5 **and the raw per-reference / per-centre CSVs behind them** |
 | `docs/` | methodology → code map, dataset layout, reproduction notes, third-party provenance |
 | `tests/` | unit tests for the weight and aggregation arithmetic |
 
@@ -112,7 +112,7 @@ export GOEF_DINOV3=/data/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
 ./scripts/run_all.sh
 ```
 
-`run_all.sh` runs seven idempotent stages; each can be run on its own:
+`run_all.sh` runs eight idempotent stages; each can be run on its own:
 
 | Stage | Command | Produces |
 |---|---|---|
@@ -122,7 +122,8 @@ export GOEF_DINOV3=/data/weights/dinov3_vitb16_pretrain_lvd1689m-73cec8be.pth
 | 4 | `04_run_one_shot_sweeps.sh` | one row per reference image, 5 methods |
 | 5 | `05_run_center_shots.sh` | one CSV per method, shot and centre, 8 methods |
 | 6 | `06_aggregate_validation.sh` | Table I |
-| 7 | `07_aggregate_reevaluation.sh` | Table II |
+| 7 | `07_aggregate_reevaluation.sh` | Table II, Fig. 5 |
+| 8 | `08_collect_results.sh` | `results/one_shot/`, `results/centers_raw/`, `results/MANIFEST.csv` |
 
 Stages 4 and 5 dominate the cost: stage 4 evaluates 12 288 reference images per
 method (27 categories of MVTec-AD and VisA), stage 5 evaluates 62 centre
@@ -177,13 +178,13 @@ rank of `ε` among the six strategies, over 2 datasets × 5 detectors × 5 seeds
 
 | Metric | SINGLE | RE-RS | RE-CS | GOEF-KC | GOEF-KD | GOEF-KM |
 |---|---|---|---|---|---|---|
-| `ϵ̄ (×100)` | 1.617 | 0.681 | 0.778 | 0.752 | 0.543 | **0.486** |
-| `r̄` | 4.47 | 3.16 | 3.50 | 3.48 | 3.00 | **2.94** |
+| `ϵ̄ (×100)` | 1.631 | 0.693 | 0.809 | 0.733 | 0.551 | **0.489** |
+| `r̄` | 4.49 | 3.16 | 3.53 | 3.44 | 3.04 | **2.93** |
 
 Reproduced by `scripts/06_aggregate_validation.sh`; the exact table is
 `results/validation/table_validation.csv`.  See
-[`docs/results.md`](docs/results.md) for the discussion of the 0.01 difference
-in the `SINGLE` rank.
+[`docs/results.md`](docs/results.md) for the per-metric breakdown, the
+Fig. 5 summary and the note on the `SINGLE` precision rule.
 
 ### Table II — re-evaluation of eight FS-IAD methods
 

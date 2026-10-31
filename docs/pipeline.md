@@ -5,6 +5,8 @@ Seven stages, each idempotent and restartable.  All paths are taken from
 
 ```
 datasets ─► [1] selection ─► [2] centres ─► [5] method runs ─► [7] aggregation ─► Table II
+                                                                    │
+                                                          [8] raw result collection ─► results/one_shot, results/centers_raw
                   │                                                  ▲
                   ├─► [3] weights ──────────────────────────────────┘
                   │
@@ -132,12 +134,29 @@ results/validation/
 results/reevaluation/
 ├── final_weighted_results.csv       80 dataset rows + 40 overall rows
 ├── all_final_weighted_results.csv   80 rows (Table II)
+├── category_weighted_results.csv    1 080 rows (the per-category M(c) before averaging)
 ├── method_metric_rankings.csv       480 rows (5 shots × 4 metrics × 3 scopes × 8 methods)
-└── metric_rank_frequency.csv        80 rows (+ per-shot average ranks)
+├── metric_rank_frequency.csv        80 rows (+ per-shot average ranks)
+└── figure5_ranking.csv              8 rows (average performance vs average rank)
 ```
 
 Shots with an incomplete grid are skipped and reported, never re-normalised —
 the same rule as the paper's pipeline.
+
+## Stage 8 — raw result collection (`goef-collect`)
+
+Copies the inputs of the two tables into the repository so that every reported
+cell can be audited without re-running a method:
+
+```
+results/one_shot/<method>/<dataset>.csv        5 methods × 2 datasets, one row per reference
+results/centers_raw/<Method>/<shot>-shot/*.csv 8 methods × 62 centre datasets
+results/MANIFEST.csv                           source path, row count and SHA-256 per file
+```
+
+Files are copied verbatim; only names are normalised (`_unified.csv` preferred
+for PatchCore, PromptAD's `_cls`/`_seg` logs skipped, INP-Former's combined CSV
+split by its `dataset` column).
 
 ## Failure modes worth knowing
 

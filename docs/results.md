@@ -12,34 +12,37 @@ average rank of `ε`.  Every strategy is evaluated on 2 datasets × 5 detectors 
 
 | Metric | SINGLE | RE-RS | RE-CS | GOEF-KC | GOEF-KD | GOEF-KM |
 |---|---|---|---|---|---|---|
-| `ϵ̄ (×100)` | 1.617 | 0.681 | 0.778 | 0.752 | 0.543 | **0.486** |
-| `r̄` | 4.48 | 3.16 | 3.50 | 3.48 | 3.00 | **2.94** |
+| `ϵ̄ (×100)` | 1.631 | 0.693 | 0.809 | 0.733 | 0.551 | **0.489** |
+| `r̄` | 4.49 | 3.16 | 3.53 | 3.44 | 3.04 | **2.93** |
 
 This is exactly the paper's table (file
 `table_validation_paper_exact.csv`).  Source values:
 
 | Strategy | `ϵ̄ ×100` | `r̄` |
 |---|---|---|
-| GOEF-KM | 0.486362 | 2.936296 |
-| GOEF-KD | 0.543152 | 2.996667 |
-| RE-RS | 0.680726 | 3.163333 |
-| GOEF-KC | 0.752439 | 3.484444 |
-| RE-CS | 0.778134 | 3.499630 |
-| SINGLE | 1.616782 | 4.480741 |
+| GOEF-KM | 0.488820 | 2.927037 |
+| GOEF-KD | 0.551166 | 3.039259 |
+| RE-RS | 0.693031 | 3.157407 |
+| GOEF-KC | 0.733179 | 3.444815 |
+| RE-CS | 0.808632 | 3.525556 |
+| SINGLE | 1.631410 | 4.494444 |
 
 Per-metric breakdown (`table_validation.csv`, `Metric != ALL`):
 
 | Metric | SINGLE | RE-RS | RE-CS | GOEF-KC | GOEF-KD | GOEF-KM |
 |---|---|---|---|---|---|---|
-| Image AUROC | 2.697 | 1.105 | 1.176 | 1.135 | 0.830 | **0.761** |
-| Image AUPR | 1.926 | 0.754 | 0.854 | 0.926 | 0.613 | **0.537** |
-| Pixel AUROC | 0.451 | 0.232 | 0.306 | 0.230 | 0.194 | **0.159** |
-| Pixel AUPRO | 1.393 | 0.632 | 0.777 | 0.718 | 0.536 | **0.488** |
+| Image AUROC | 2.633 | 1.096 | 1.168 | 1.049 | 0.800 | **0.730** |
+| Image AUPR | 1.874 | 0.737 | 0.824 | 0.834 | 0.579 | **0.501** |
+| Pixel AUROC | 0.437 | 0.226 | 0.312 | 0.225 | 0.194 | **0.160** |
+| Pixel AUPRO | 1.363 | 0.622 | 0.802 | 0.707 | 0.527 | **0.486** |
 
-The per-metric ordering is the same as the aggregate one: GOEF-KM wins on every
-metric, GOEF-KD is second on three of four, and coreset / k-center are worse
-than random sampling — the outliers they pick have small cluster weights but
-atypical performance, exactly as predicted by the analysis of Sec. III-C.
+GOEF-KM wins on every metric and GOEF-KD is second on three of the four.
+Coreset and k-center are consistently worse than random sampling, and k-center
+is the worst of the three clustering strategies: the outliers they select have
+small cluster weights but atypical performance, exactly as predicted by the
+analysis of Sec. III-C.  Pixel AUROC is the one metric where the ordering of
+RE-RS and GOEF-KC almost swaps (0.2264 vs 0.2249), i.e. the metric on which the
+clustering advantage is smallest.
 
 ### The two Table I files
 
@@ -48,13 +51,17 @@ atypical performance, exactly as predicted by the analysis of Sec. III-C.
 | `table_validation_paper_exact.csv` | reproduces the published numbers, including the way the archived pipeline handled SINGLE |
 | `table_validation.csv` | the same computation with a single, uniform precision rule |
 
-The archived pipeline stored every strategy's metrics with six decimals but
-copied the SINGLE baseline from the raw metric CSV at full precision.  Because
-`r̄` is a competition rank, that asymmetry slightly *disadvantages* SINGLE
-(4.4807 instead of 4.4726).  `goef-validate --legacy_single_precision`
+Metrics are stored with six decimals and compared with exact decimal
+arithmetic, exactly as in the paper's pipeline (`goef.validation` uses
+`decimal.Decimal` on the six-decimal strings, so ties are detected precisely).
+
+The archived pipeline copied the SINGLE baseline from the raw metric CSV at
+full precision while storing the other five strategies with six decimals.
+Because `r̄` is a competition rank, that asymmetry slightly *disadvantages*
+SINGLE (4.4944 instead of 4.4804).  `goef-validate --legacy_single_precision`
 reproduces it; the default applies the same six-decimal rule to all six
-strategies.  The difference is confined to the `SINGLE` rank (0.008); every
-`ϵ̄` value and every other rank is identical to the paper.
+strategies.  The difference is confined to `SINGLE` (0.014) and `RE-CS`
+(0.0007); every `ϵ̄` value and every other rank is identical to the paper.
 
 ## Table II — re-evaluation of eight FS-IAD methods
 
@@ -100,12 +107,31 @@ percentages and match the paper's Table II to the last reported digit.
 | UniVAD | **98.27** | **99.15** | 96.64 | 93.44 | 95.38 | 95.55 | 98.33 | 94.47 |
 | SubspaceAD | 97.46 | 98.54 | **97.87** | **94.94** | 93.35 | 93.13 | **98.50** | **95.35** |
 
-## Rank frequencies (Fig. 5)
+## Fig. 5 — average performance vs average rank
 
-`results/reevaluation/metric_rank_frequency.csv` holds, for every shot and
-dataset, how often each method obtained rank 1…8 on the four metrics and the
-corresponding average rank.  `method_metric_rankings.csv` holds the underlying
-480 rankings (5 shots × 4 metrics × 3 scopes × 8 methods).
+`results/reevaluation/figure5_ranking.csv` averages the four metrics over the
+three reported settings (1-, 2- and 4-shot) and both datasets, and averages each
+method's tied rank over the six resulting tables:
+
+| Method | Average performance metric | Average rank number |
+|---|---|---|
+| SubspaceAD | 95.73 | **2.29** |
+| UniVAD | **95.89** | 2.42 |
+| AnomalyDINO | 95.09 | 3.33 |
+| INP-Former | 95.50 | 3.42 |
+| FoundAD | 95.17 | 3.54 |
+| PromptAD | 91.82 | 6.00 |
+| WinCLIP | 89.27 | 7.04 |
+| PatchCore | 85.80 | 7.96 |
+
+This reproduces both the paper's Fig. 5 and the supplementary Fig. 1, including
+the two headline claims: UniVAD has the highest average performance metric
+(95.89 %) and SubspaceAD the best average rank (2.29).
+
+`results/reevaluation/metric_rank_frequency.csv` holds the underlying per-table
+counts (rank 1…8 per method and their average rank);
+`method_metric_rankings.csv` holds the 480 individual rankings
+(5 shots × 4 metrics × 3 scopes × 8 methods).
 
 ## Reproducing
 
@@ -124,8 +150,10 @@ python -m goef.cli.validate --config "$GOEF_WORKSPACE/outputs/validation/validat
 | Check | Result |
 |---|---|
 | Eq. (22) weights vs the per-shot weight tables `k = 1…5` | max deviation `5e-13` |
-| Table II vs the archived `all_final_weighted_results.csv` (80 rows) | max deviation `5e-7` |
+| Table II vs the archived `all_final_weighted_results.csv` (80 rows) | identical (the archived names `patchcore` / `Accurate-WinCLIP` map to the paper's `PatchCore` / `WinCLIP`) |
 | Table II rankings vs archived `method_metric_rankings.csv` (480 rows) | identical |
 | Rank frequencies vs archived `metric_rank_frequency_summary.csv` | identical |
-| Table I vs the paper (`ϵ̄`, six strategies) | identical to 3 decimals |
-| Table I `r̄` vs the paper | identical, except SINGLE 4.473 vs 4.48 (precision artefact above) |
+| Fig. 5 averages vs the paper and the supplementary Fig. 1 | identical to 2 decimals |
+| Table I `ϵ̄` and `r̄` (paper-exact mode) | identical to 3 decimals |
+| Table I from the collected `results/one_shot/` | reproduces the same table as the original sources |
+| Table II from the collected `results/centers_raw/` | reproduces the same table as the original sources |

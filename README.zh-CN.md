@@ -25,7 +25,7 @@ Framework for Few-shot Image Anomaly Detection》** 的完整项目代码，覆�
         results/validation                   results/reevaluation（表 II）
 ```
 
-七个阶段对应 `scripts/` 下的脚本，全部可从中断处继续：
+八个阶段对应 `scripts/` 下的脚本，全部可从中断处继续：
 
 | 阶段 | 脚本 | 产物 |
 |---|---|---|
@@ -35,7 +35,8 @@ Framework for Few-shot Image Anomaly Detection》** 的完整项目代码，覆�
 | 4 | `04_run_one_shot_sweeps.sh` | 5 个方法“每张训练图当一次 1-shot”的**全量**结果 CSV |
 | 5 | `05_run_center_shots.sh` | 8 个方法在每个中心数据集上的结果 CSV |
 | 6 | `06_aggregate_validation.sh` | 表 I |
-| 7 | `07_aggregate_reevaluation.sh` | 表 II |
+| 7 | `07_aggregate_reevaluation.sh` | 表 II、图 5 |
+| 8 | `08_collect_results.sh` | `results/one_shot/`、`results/centers_raw/`、`results/MANIFEST.csv` |
 
 一次跑完：
 
@@ -82,11 +83,11 @@ DETECTORS="patchcore" ./scripts/04_run_one_shot_sweeps.sh   # 表 I 只跑一个
 | 目录 | 内容 |
 |---|---|
 | `goef/` | 核心实现：特征提取、5 种选择策略、中心数据集、权重（式 21–22）、加权聚合、表 I 验证、表 II 重评估 |
-| `goef/cli/` | 5 个命令行入口：`sample` / `build_centers` / `weights` / `validate` / `reevaluate` |
+| `goef/cli/` | 6 个命令行入口：`sample` / `build_centers` / `weights` / `validate` / `reevaluate` / `collect` |
 | `modifications/` | 8 个上游项目的全部改动文件（5 个逐参考图扫描 + 8 个逐中心评估），以及统一的 `unified_evaluation.py`；每个项目附运行命令 |
 | `scripts/` | 端到端流水线与上游项目安装脚本 |
 | `configs/` | 两个聚合阶段的 YAML 配置 |
-| `results/` | 重新生成的表 I、表 II 结果 |
+| `results/` | 表 I、表 II、图 5，以及**支撑它们的全部原始逐参考/逐中心 CSV** |
 | `docs/` | 公式与代码对照、数据布局、复现说明、数值差异说明、第三方来源 |
 | `tests/` | 14 个单元测试（权重、聚合、验证流程） |
 
@@ -96,8 +97,8 @@ DETECTORS="patchcore" ./scripts/04_run_one_shot_sweeps.sh   # 表 I 只跑一个
 
 | 指标 | SINGLE | RE-RS | RE-CS | GOEF-KC | GOEF-KD | GOEF-KM |
 |---|---|---|---|---|---|---|
-| `ϵ̄ (×100)` | 1.617 | 0.681 | 0.778 | 0.752 | 0.543 | **0.486** |
-| `r̄` | 4.48 | 3.16 | 3.50 | 3.48 | 3.00 | **2.94** |
+| `ϵ̄ (×100)` | 1.631 | 0.693 | 0.809 | 0.733 | 0.551 | **0.489** |
+| `r̄` | 4.49 | 3.16 | 3.53 | 3.44 | 3.04 | **2.93** |
 
 **表 II（8 个方法 1-shot 图像级 AUROC）**
 
@@ -125,9 +126,9 @@ DETECTORS="patchcore" ./scripts/04_run_one_shot_sweeps.sh   # 表 I 只跑一个
 | 表 I 的 `ϵ̄` | 六种策略均一致到小数点后 3 位 |
 | 表 I 的 `r̄` | 除 SINGLE 外完全一致 |
 
-`SINGLE` 的 `r̄` 差异（本仓库默认口径 4.473，论文 4.48）来自旧流水线的精度不一致：
+`SINGLE` 的 `r̄` 差异（本仓库默认口径 4.480，论文 4.494）来自旧流水线的精度不一致：
 其他策略存为 6 位小数，而 SINGLE 直接保留原始精度，在并列名次上略吃亏。
-`goef.cli.validate --legacy_single_precision` 可逐位复现论文中的 4.4807；
+`goef.cli.validate --legacy_single_precision` 可逐位复现论文中的 4.4944；
 `results/validation/table_validation_paper_exact.csv` 即该口径的结果。
 
 ## 用于你自己的方法

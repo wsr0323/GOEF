@@ -23,7 +23,7 @@ import json
 import math
 import re
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 
@@ -102,6 +102,7 @@ class MethodResult:
     dataset: str
     category_count: int
     metrics: dict[str, float]
+    categories: dict[str, dict[str, float]] = field(default_factory=dict)
 
 
 def aggregate_method(
@@ -165,6 +166,10 @@ def aggregate_method(
                 dataset=dataset,
                 category_count=len(rows),
                 metrics=dataset_values,
+                categories={
+                    category: values
+                    for category, values in zip(weights, rows)
+                },
             )
         ],
         [],
@@ -264,6 +269,76 @@ def final_rows(results: Iterable[MethodResult]) -> list[dict[str, object]]:
         }
         row.update({metric: 100.0 * result.metrics[metric] for metric in METRICS})
         rows.append(row)
+    return rows
+
+
+def category_rows(results: Iterable[MethodResult]) -> list[dict[str, object]]:
+    """Per-category weighted metrics (``M(c)`` of Eq. 21)."""
+    rows = []
+    for result in sorted(results, key=lambda item: (item.shot, item.dataset, item.method)):
+        for category, values in sorted(result.categories.items()):
+            row: dict[str, object] = {
+                "Shot": result.shot,
+                "Dataset": result.dataset,
+                "Method": result.method,
+                "Category": category,
+            }
+            row.update({metric: 100.0 * values[metric] for metric in METRICS})
+            rows.append(row)
+    return rows
+
+
+def overall_ranking(
+    results: Iterable[MethodResult],
+    shots: Sequence[int] = (1, 2, 4),
+) -> list[dict[str, object]]:
+    """Average performance metric and average rank number (Fig. 5).
+
+    ``average performance`` is the mean of the four metrics over the reported
+    shots and both datasets; ``average rank`` is the mean, over every
+    (shot, dataset) table, of the method's average tied rank on the four metrics.
+    """
+    results = [result for result in results if result.shot in shots]
+    if not results:
+        raise ValueError(f"no result for shots {tuple(shots)}")
+
+    performance: dict[str, list[float]] = defaultdict(list)
+    for result in results:
+        for metric in METRICS:
+            performance[result.method].append(result.metrics[metric])
+
+    frequency: dict[tuple[int, str], dict[str, dict[str, float]]] = defaultdict(dict)
+    for result in results:
+        frequency[(result.shot, result.dataset)][result.method] = result.metrics
+
+    ranks: dict[str, list[float]] = defaultdict(list)
+    for table in frequency.values():
+        methods = sorted(table)
+        for metric in METRICS:
+            ordered = sorted(methods, key=lambda method: table[method][metric], reverse=True)
+            position = 0
+            while position < len(ordered):
+                score = table[ordered[position]][metric]
+                end = position + 1
+                while end < len(ordered) and table[ordered[end]][metric] == score:
+                    end += 1
+                tied = (position + 1 + end) / 2
+                for method in ordered[position:end]:
+                    ranks[method].append(tied)
+                position = end
+
+    rows = []
+    for method in sorted(performance):
+        rows.append(
+            {
+                "Method": method,
+                "Average Performance Metric": 100.0 * sum(performance[method]) / len(performance[method]),
+                "Average Rank Number": sum(ranks[method]) / len(ranks[method]),
+                "Tables": len(frequency),
+                "Shots": ",".join(str(shot) for shot in shots),
+            }
+        )
+    rows.sort(key=lambda row: (row["Average Rank Number"], row["Method"]))
     return rows
 
 

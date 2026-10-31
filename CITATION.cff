@@ -24,8 +24,8 @@ authors:
     given-names: Xinwang
 type: software
 license: MIT
-version: 1.1.0
-date-released: "2026-10-28"
+version: 1.2.0
+date-released: "2026-10-31"
 preferred-citation:
   type: article
   title: "Don't Miss Forest for A Tree: The Globality-Orientated Evaluation Framework for Few-shot Image Anomaly Detection"

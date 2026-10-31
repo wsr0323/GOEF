@@ -18,3 +18,4 @@ HERE=$(cd -- "$(dirname -- "$0")" && pwd)
 "${HERE}/05_run_center_shots.sh"         # Sec. IV   (8 methods, 62 center datasets)
 "${HERE}/06_aggregate_validation.sh"     # Table I
 "${HERE}/07_aggregate_reevaluation.sh"   # Table II
+"${HERE}/08_collect_results.sh"         # raw tables -> results/

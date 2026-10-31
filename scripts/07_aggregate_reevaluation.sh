@@ -11,8 +11,8 @@ mkdir -p "$OUT"
 
 args=()
 add() { [[ -d "$2" ]] && args+=(--method "$1=$2"); }
-add patchcore         "${REEVALUATION_DIR}/patchcore-inspection"
-add Accurate-WinCLIP  "${REEVALUATION_DIR}/Accurate-WinCLIP-pytorch"
+add PatchCore         "${REEVALUATION_DIR}/patchcore-inspection"
+add WinCLIP           "${REEVALUATION_DIR}/Accurate-WinCLIP-pytorch"
 add PromptAD          "${REEVALUATION_DIR}/PromptAD"
 add AnomalyDINO       "${REEVALUATION_DIR}/AnomalyDINO"
 add FoundAD           "${REEVALUATION_DIR}/FoundAD"

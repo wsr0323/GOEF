@@ -106,7 +106,17 @@ so that no adapter can silently change the protocol.  The per-method AUPRO
 implementations of the upstream projects are **not** used for the paper's
 numbers: every adapter reports the four metrics above.
 
-## 6. Why GOEF changes conclusions
+## 6. Fig. 5 — average performance vs average rank
+
+| Quantity | Definition | Code |
+|---|---|---|
+| Average performance metric | mean of the four metrics over the 1-, 2- and 4-shot tables of both datasets | `goef.reevaluate.overall_ranking` |
+| Average rank number | mean of the method's tied rank over the six tables | `goef.reevaluate.rank_frequencies` + `overall_ranking` |
+
+`goef-reevaluate` writes both to `results/reevaluation/figure5_ranking.csv`;
+the per-table counts are in `metric_rank_frequency.csv`.
+
+## 7. Why GOEF changes conclusions
 
 Two consequences of Eq. (2) and Eq. (21) are visible in the results:
 
